@@ -4,15 +4,10 @@
 	var striptags = require('striptags');
 	var outputFile = 'outputFile.json';
 	var testFile = 'scientists.json';
-	// var client 		= redis.createClient();
+	var client 		= redis.createClient();
 	var scientists = ['Clifford_Brown', 'Clifford_Brown']; 
 	var modifiedResults = {}; 
 	modifiedResults.scientists = []; 
-
-
-	// Add in century & name to a hash thats passed around 
-	// Fix Name so spaces are replaced with _
-	// Get rid of MusicBrain from text 
 
 	jsonParser.readFile(testFile, function(err, obj) {
 		var modObj = obj.map(function(val) {
