@@ -4,7 +4,7 @@
 	var striptags = require('striptags');
 	var outputFile = 'outputFile.json';
 	var testFile = 'scientists.json';
-	// var client 		= redis.createClient();
+	var client 		= redis.createClient();
 	var scientists = ['Clifford_Brown', 'Clifford_Brown']; 
 	var modifiedResults = {}; 
 	modifiedResults.scientists = []; 
@@ -55,12 +55,12 @@
 	}
 
 
-function writeToJSON() { 
-	client.get('scientists', function(err, reply){
-	  	jsonParser.writeFile(outputFile, reply, function(err, obj) {
-	  		console.log('Successfully wrote to File');
-	  		client.quit();
-   		});	
-	});
-}
+	function writeToJSON() { 
+		client.get('scientists', function(err, reply){
+		  	jsonParser.writeFile(outputFile, reply, function(err, obj) {
+		  		console.log('Successfully wrote to File');
+		  		client.quit();
+	   		});	
+		});
+	}
  
