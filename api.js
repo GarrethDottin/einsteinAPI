@@ -1,50 +1,58 @@
-var nodewiki = require('node-wikipedia');
-var jsonParser 	= require('jsonfile');
-var redis 		= require('redis');
-var striptags = require('striptags');
-var outputFile = 'outputFile.json';
+	var nodewiki = require('node-wikipedia');
+	var jsonParser 	= require('jsonfile');
+	var redis 		= require('redis');
+	var striptags = require('striptags');
+	var outputFile = 'outputFile.json';
+	var testFile = 'scientists.json';
+	// var client 		= redis.createClient();
+	var scientists = ['Clifford_Brown', 'Clifford_Brown']; 
+	var modifiedResults = {}; 
+	modifiedResults.scientists = []; 
 
-var client 		= redis.createClient();
-var scientists = ['Clifford_Brown', 'Clifford_Brown']; 
-var modifiedResults = {}; 
-modifiedResults.scientists = []; 
 
-var numberOfScientists = scientists.length - 1;
-scientists.map(function(val, counter) {
-	if (numberOfScientists === counter ) {
-		apiCall(val,writeToJSON())
-	}
-	else { 
-		apiCall(val);
-	}
-});
+	// Add in century & name to a hash thats passed around 
+	// Fix Name so spaces are replaced with _
+	// Get rid of MusicBrain from text 
 
-function apiCall(name, callback) { 
-	nodewiki.page.data(name, { content: true }, function(response) {
-		var formattedData = formatResponse(response.text);
-		var stringifiedData = stringified(formattedData, name);
-		var cacheResults =  setInRedis(stringifiedData); 
-		callback;
+	jsonParser.readFile(testFile, function(err, obj) { 
+		console.log(obj);
 	});
-}
+	var numberOfScientists = scientists.length - 1;
+	scientists.map(function(val, counter) {
+		if (numberOfScientists === counter ) {
+			apiCall(val,writeToJSON())
+		}
+		else { 
+			apiCall(val);
+		}
+	});
 
-function formatResponse (response) { 
-	var uncleanedText = response['*'];
-	var cleanedText = striptags(uncleanedText);
-	return cleanedText;
-}
+	function apiCall(name, callback) { 
+		nodewiki.page.data(name, { content: true }, function(response) {
+			var formattedData = formatResponse(response.text);
+			var stringifiedData = stringified(formattedData, name);
+			var cacheResults =  setInRedis(stringifiedData); 
+			callback;
+		});
+	}
 
-function stringified(formattedData, name) {
-	var keyValuePair = {}; 
-	keyValuePair[name] = formattedData;
-	modifiedResults.scientists.push(keyValuePair);
-  	var modVal = JSON.stringify(modifiedResults);
-  	return modVal; 
-}
+	function formatResponse (response) { 
+		var uncleanedText = response['*'];
+		var cleanedText = striptags(uncleanedText);
+		return cleanedText;
+	}
 
-function setInRedis(value) { 
-  	client.set('scientists', value);
-}
+	function stringified(formattedData, name) {
+		var keyValuePair = {}; 
+		keyValuePair[name] = formattedData;
+		modifiedResults.scientists.push(keyValuePair);
+	  	var modVal = JSON.stringify(modifiedResults);
+	  	return modVal; 
+	}
+
+	function setInRedis(value) { 
+	  	client.set('scientists', value);
+	}
 
 
 function writeToJSON() { 
