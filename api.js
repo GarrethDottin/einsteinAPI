@@ -4,7 +4,7 @@
 	var striptags = require('striptags');
 	var outputFile = 'outputFile.json';
 	var testFile = 'scientists.json';
-	var client 		= redis.createClient();
+	// var client 		= redis.createClient();
 	var scientists = ['Clifford_Brown', 'Clifford_Brown']; 
 	var modifiedResults = {}; 
 	modifiedResults.scientists = []; 
@@ -14,23 +14,32 @@
 	// Fix Name so spaces are replaced with _
 	// Get rid of MusicBrain from text 
 
-	jsonParser.readFile(testFile, function(err, obj) { 
-		console.log(obj);
+	jsonParser.readFile(testFile, function(err, obj) {
+		var modObj = obj.map(function(val) {
+			var newObj = {}; 
+			newObj.title = val.title.split(" ").join("_");
+			newObj.century = val.century;
+			return newObj;
+		});
 	});
 	var numberOfScientists = scientists.length - 1;
-	scientists.map(function(val, counter) {
-		if (numberOfScientists === counter ) {
-			apiCall(val,writeToJSON())
-		}
-		else { 
-			apiCall(val);
-		}
-	});
+	function cycleScientists (set) { 
+		var numberOfScientists = set.length - 1;
+		set.map(function(val, counter) {
+			if (numberOfScientists === counter ) {
+				apiCall(val,writeToJSON())
+			}
+			else { 
+				apiCall(val);
+			}
+		});
+	}
 
-	function apiCall(name, callback) { 
-		nodewiki.page.data(name, { content: true }, function(response) {
+
+	function apiCall(val, callback) { 
+		nodewiki.page.data(val.title, { content: true }, function(response) {
 			var formattedData = formatResponse(response.text);
-			var stringifiedData = stringified(formattedData, name);
+			var stringifiedData = stringified(formattedData, val);
 			var cacheResults =  setInRedis(stringifiedData); 
 			callback;
 		});
@@ -42,9 +51,11 @@
 		return cleanedText;
 	}
 
-	function stringified(formattedData, name) {
+	function stringified(formattedData, val) {
 		var keyValuePair = {}; 
-		keyValuePair[name] = formattedData;
+		keyValuePair[val.title] = {};
+		keyValuePair[val.title].century = val.century; 
+		keyValuePair[val.title].data = formattedData;
 		modifiedResults.scientists.push(keyValuePair);
 	  	var modVal = JSON.stringify(modifiedResults);
 	  	return modVal; 
