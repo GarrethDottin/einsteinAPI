@@ -9,6 +9,9 @@
 	var modifiedResults = {}; 
 	modifiedResults.scientists = []; 
 
+	// 	Try Endpoint Call 
+	//	setup method to replace certain text 
+
 	jsonParser.readFile(testFile, function(err, obj) {
 		var modObj = obj.map(function(val) {
 			var newObj = {}; 
@@ -16,23 +19,27 @@
 			newObj.century = val.century;
 			return newObj;
 		});
+		var test = [modObj[0]]
+		cycleScientists(test);
 	});
-	var numberOfScientists = scientists.length - 1;
+
 	function cycleScientists (set) { 
 		var numberOfScientists = set.length - 1;
 		set.map(function(val, counter) {
 			if (numberOfScientists === counter ) {
-				apiCall(val,writeToJSON())
+				console.log('api end of call');
+				apiCall(val,getCachedResults());
 			}
-			else { 
+			else {
+				console.log('api first call');
 				apiCall(val);
 			}
 		});
 	}
 
-
 	function apiCall(val, callback) { 
 		nodewiki.page.data(val.title, { content: true }, function(response) {
+			console.log('response');
 			var formattedData = formatResponse(response.text);
 			var stringifiedData = stringified(formattedData, val);
 			var cacheResults =  setInRedis(stringifiedData); 
@@ -48,9 +55,9 @@
 
 	function stringified(formattedData, val) {
 		var keyValuePair = {}; 
-		keyValuePair[val.title] = {};
-		keyValuePair[val.title].century = val.century; 
-		keyValuePair[val.title].data = formattedData;
+		keyValuePair.title = val.title;
+		keyValuePair.century = val.century; 
+		keyValuePair.text = formattedData;
 		modifiedResults.scientists.push(keyValuePair);
 	  	var modVal = JSON.stringify(modifiedResults);
 	  	return modVal; 
@@ -61,12 +68,24 @@
 	}
 
 
-	function writeToJSON() { 
-		client.get('scientists', function(err, reply){
-		  	jsonParser.writeFile(outputFile, reply, function(err, obj) {
-		  		console.log('Successfully wrote to File');
-		  		client.quit();
-	   		});	
-		});
+	function writeToJSON(reply) { 
+	  	jsonParser.writeFile(outputFile, reply, function(err, obj) {
+	  		console.log('Successfully wrote to File');
+	  		client.quit();
+   		});	
 	}
  
+ 	function getCachedResults() { 
+		client.get('scientists', function(err, reply){
+			var cleanedData = dataCleaner(reply);
+			writeToJSON(reply);
+		});
+	}
+
+	function dataCleaner(data) { 
+		var cleanedData = data.map(function(obj){
+			obj.text = obj.text.replace(/MusicBrain/g, "");
+			return obj;
+		}); 
+		return cleanedData;
+	}
